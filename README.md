@@ -49,3 +49,19 @@ That's the OM1-tested combination. If walking works there, then the
 bug is specifically in NGC-image + Jazzy combination.
 
 If still failing: ask in OM1 Discord with this README as context.
+
+## MILESTONE — April 25, 2026 ~23:38 UTC
+
+**Go2 visible and walking-policy-active in Isaac Sim 5.1 on Vast.ai**, streamed
+to laptop browser via Selkies desktop on port 6100 → 51683.
+
+Configuration that worked:
+- Container: nvcr.io/nvidia/isaac-sim:5.1.0 as user 1234 (isaac-sim)
+- DISPLAY=:0 from host Selkies session, X11 socket bind-mounted
+- run.py with `headless: False` and setup_ros() bypassed
+- Walking policy from openmindagi/om1_ros2_sdk:v1.0.1
+
+Confirmed via PANTHERA-MARK markers reaching G ("before runner.run() — entering main loop")
+and visual confirmation of Go2 quadruped in scene viewport.
+
+Next: re-enable setup_ros (or its rclpy bypass) so external cmd_vel topics drive Go2.

@@ -14,7 +14,7 @@ Examples
 
 from isaacsim import SimulationApp
 
-simulation_app = SimulationApp({"renderer": "RaytracedLighting", "headless": True})
+simulation_app = SimulationApp({"renderer": "RaytracedLighting", "headless": False})
 
 import argparse
 import logging
@@ -1058,8 +1058,8 @@ def main():
         runner.setup()
         print("[PANTHERA-MARK] D: setup() done", flush=True)
         simulation_app.update()
-        print("[PANTHERA-MARK] E: app.update done, calling setup_ros()", flush=True)
-        runner.setup_ros()
+        print("[PANTHERA-MARK] E: app.update done, SKIPPING setup_ros() entirely", flush=True)
+        # runner.setup_ros()  # PANTHERA: bypassed for diagnostic
         print("[PANTHERA-MARK] F: setup_ros() done", flush=True)
         simulation_app.update()
         print("[PANTHERA-MARK] G: before runner.run() — entering main loop", flush=True)
