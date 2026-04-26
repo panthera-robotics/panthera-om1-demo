@@ -136,18 +136,27 @@ def setup_cmd_vel_graph(
         linear_attr.set([msg.linear.x, msg.linear.y, msg.linear.z])
         angular_attr.set([msg.angular.x, msg.angular.y, msg.angular.z])
         count_attr.inc()
+        if count_attr.get() % 50 == 0:
+            print(f"[PANTHERA-CB] cmd_vel #{count_attr.get()}: lin={msg.linear.x:.2f}, ang={msg.angular.z:.2f}", flush=True)
 
     node.create_subscription(Twist, topic_name, _twist_cb, 10)
 
-    # Spin in background thread so callbacks fire
+    # Spin in background thread so callbacks fire.
+    # Isaac Sim's bundled rclpy needs an explicit executor, not rclpy.spin().
+    from rclpy.executors import SingleThreadedExecutor
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+
     def _spin():
         try:
-            rclpy.spin(node)
-        except Exception:
-            pass
+            while rclpy.ok():
+                executor.spin_once(timeout_sec=0.1)
+        except Exception as e:
+            print(f"[PANTHERA] spin thread exited: {e}", flush=True)
 
     spin_thread = threading.Thread(target=_spin, daemon=True)
     spin_thread.start()
+    print(f"[PANTHERA] executor spinning on dedicated thread", flush=True)
 
     print(f"[PANTHERA] cmd_vel subscriber active on {topic_name} (rclpy bypass)", flush=True)
 
