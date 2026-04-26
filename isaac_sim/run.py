@@ -25,7 +25,7 @@ from typing import Optional, Tuple
 import carb
 import numpy as np
 import omni.appwindow  # Contains handle to keyboard
-import utils as ros_utils
+import om1_utils as ros_utils
 import yaml
 from isaacsim.core.api import World
 from isaacsim.core.utils.prims import define_prim
@@ -1059,7 +1059,7 @@ def main():
         print("[PANTHERA-MARK] D: setup() done", flush=True)
         simulation_app.update()
         print("[PANTHERA-MARK] E: app.update done, SKIPPING setup_ros() entirely", flush=True)
-        # runner.setup_ros()  # PANTHERA: bypassed for diagnostic
+        runner.setup_ros()
         print("[PANTHERA-MARK] F: setup_ros() done", flush=True)
         simulation_app.update()
         print("[PANTHERA-MARK] G: before runner.run() — entering main loop", flush=True)

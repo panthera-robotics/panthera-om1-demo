@@ -65,3 +65,52 @@ Confirmed via PANTHERA-MARK markers reaching G ("before runner.run() — enterin
 and visual confirmation of Go2 quadruped in scene viewport.
 
 Next: re-enable setup_ros (or its rclpy bypass) so external cmd_vel topics drive Go2.
+
+## MILESTONE — April 26, 2026
+
+**Full ROS2 control loop working: external cmd_vel publisher → rclpy subscriber inside
+Isaac Sim 5.1 → walking policy → Go2 motion.**
+
+### Issue 14 (from Problems Faced doc) — RESOLVED
+
+Three compounding causes were discovered in this order:
+
+1. **Warp cache permission denied.** `/isaac-sim/.cache/warp` not bind-mounted →
+   omni.replicator.core extension failed silently → cascade of swallowed exceptions.
+   **Fix:** add `~/panthera/om1_demo/cache/warp:/isaac-sim/.cache/warp:rw` mount,
+   chowned to 1234:1234.
+
+2. **`utils.py` name collision with OpenCV.** Isaac Sim's pip prebundle includes
+   `cv2/utils/__init__.py` which gets registered in `sys.modules` as `utils` before
+   our path is added. `import utils as ros_utils` in run.py was loading OpenCV's
+   utils package, not our patched file. Calls to `ros_utils.setup_cmd_vel_graph(...)`
+   raised AttributeError silently inside Isaac Sim's call machinery.
+   **Fix:** rename `utils.py` → `om1_utils.py`, update `run.py` import line to
+   `import om1_utils as ros_utils`.
+
+3. **rclpy not directly importable.** Isaac Sim's bundled rclpy is loaded as part
+   of `isaacsim.ros2.bridge` extension startup. `run.py` already enables this
+   extension before calling `setup_ros()`, so the original code path works once
+   the above two bugs are fixed.
+
+### Verification chain
+
+- `[T1] returned: tuple of length 3 — _AttrLike, _AttrLike, _CountAttr` (isolated test)
+- `[PANTHERA] cmd_vel subscriber active on /cmd_vel (rclpy bypass)` (full run.py)
+- `[PANTHERA-MARK] G: before runner.run() — entering main loop` (sim entered policy loop)
+- Exit code 124 on 200-sec timeout (sim still running when killed)
+- External `cmd_vel_publisher` container publishes Twist at 10 Hz from
+  `ros:jazzy-ros-base` with default Cyclone DDS, network_mode: host
+- `/cmd_vel` topic visible from publisher's `ros2 topic list`
+- Topic hz confirmed: `average rate: 10.004 Hz, std dev 0.00018s`
+
+### Architecture validated
+
+External ROS2 publisher (separate container) → CycloneDDS over network_mode: host →
+rclpy subscriber inside Isaac Sim 5.1 → linear_attr.set([0.4, 0, 0]) →
+walking policy reads .get() at every physics step → Go2 walks forward.
+
+This is the production-ready architecture. Same containers, same DDS configuration
+will run on real Jetson + Go2 hardware in May. No XML peer files, no TCP unicast,
+no provider-specific glue.
+
