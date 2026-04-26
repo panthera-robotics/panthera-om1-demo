@@ -76,6 +76,10 @@ docker run -d --name cmd_vel_publisher \
   --network host \
   -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
   -e ROS_DOMAIN_ID=42 \
+  -e DISPLAY="$HOST_DISPLAY" \
+  -e XAUTHORITY=/tmp/.docker.xauth \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -v "$XAUTH_FILE":/tmp/.docker.xauth:ro \
   ros:jazzy-ros-base \
   sleep infinity > /dev/null
 sleep 2
@@ -83,14 +87,14 @@ sleep 2
 echo "    Ensuring Cyclone RMW + geometry_msgs installed..."
 docker exec cmd_vel_publisher bash -c '
 apt update -qq 2>&1 | tail -1
-apt install -y -qq ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-geometry-msgs 2>&1 | tail -1
+apt install -y -qq ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-geometry-msgs ros-jazzy-rviz2 2>&1 | tail -1
 ' > /dev/null
 echo "    Publisher container up."
 
 echo ""
 echo "[5/6] Launching run.py inside Isaac Sim (this takes ~60 sec)..."
 docker exec -d panthera_om1_demo bash -c '
-cd /workspace/om1_isaac && /isaac-sim/python.sh run.py --robot_type go2 --no_keyboard --no_sensors > /tmp/demo.log 2>&1
+cd /workspace/om1_isaac && /isaac-sim/python.sh run.py --robot_type go2 --no_keyboard  > /tmp/demo.log 2>&1
 '
 
 echo "    Waiting for sim to enter main loop..."
