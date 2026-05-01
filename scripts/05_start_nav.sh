@@ -22,6 +22,9 @@
 
 set -e
 
+# Source robot config (sets PANTHERA_NAV_LAUNCH_PKG, PANTHERA_NAV_LAUNCH_FILE, etc.)
+source "$(dirname "$0")/lib/robot_config.sh"
+
 REPO_DIR="$HOME/panthera/panthera-om1-demo"
 HOST_DISPLAY="${DISPLAY:-:0}"
 DESKTOP_USER="${DESKTOP_USER:-user}"
@@ -146,6 +149,7 @@ docker run -d --name panthera_nav \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   -v "$XAUTH_FILE":/tmp/.docker.xauth:ro \
   -v "$REPO_DIR/maps:/app/om1_ros2_sdk/maps:rw" \
+  -v "$REPO_DIR/launch:/panthera_launch:ro" \
   --entrypoint bash \
   openmindagi/om1_ros2_sdk:v1.0.1 \
   -c "tail -f /dev/null" > /dev/null
@@ -163,7 +167,11 @@ docker exec -d panthera_nav bash -c '
   source /app/om1_ros2_sdk/install/setup.bash
   export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
   export ROS_DOMAIN_ID=42
-  exec ros2 launch go2_sdk slam_launch.py use_sim:=true > /tmp/nav.log 2>&1
+  if [ -n "'"'$PANTHERA_NAV_LAUNCH_PKG'"'" ]; then
+    exec ros2 launch '"'$PANTHERA_NAV_LAUNCH_PKG'"' '"'$PANTHERA_NAV_LAUNCH_FILE'"' use_sim:=true > /tmp/nav.log 2>&1
+  else
+    exec ros2 launch '"'$PANTHERA_NAV_LAUNCH_FILE'"' use_sim:=true > /tmp/nav.log 2>&1
+  fi
 '
 
 echo "      Waiting 20 sec for Nav2 lifecycle to come up..."
