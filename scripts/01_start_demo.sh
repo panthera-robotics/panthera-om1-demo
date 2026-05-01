@@ -7,8 +7,11 @@
 
 set -e
 
+# Source robot config (sets PANTHERA_ROBOT_TYPE based on ROBOT env var)
+source "$(dirname "$0")/lib/robot_config.sh"
+
 echo "==============================================="
-echo " Panthera demo — cold start"
+echo " Panthera demo — cold start (ROBOT=$ROBOT)"
 echo "==============================================="
 echo ""
 
@@ -94,7 +97,7 @@ echo "    Publisher container up."
 echo ""
 echo "[5/6] Launching run.py inside Isaac Sim (this takes ~60 sec)..."
 docker exec -d panthera_om1_demo bash -c '
-cd /workspace/om1_isaac && /isaac-sim/python.sh run.py --robot_type go2 --no_keyboard  > /tmp/demo.log 2>&1
+cd /workspace/om1_isaac && /isaac-sim/python.sh run.py --robot_type $PANTHERA_ROBOT_TYPE --no_keyboard  > /tmp/demo.log 2>&1
 '
 
 echo "    Waiting for sim to enter main loop..."
