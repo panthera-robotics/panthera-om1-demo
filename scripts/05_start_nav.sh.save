@@ -1,0 +1,113 @@
+!/bin/bash
+# Panthera demo — start SLAM + Nav2 stack
+# Brings up a third container running OpenMind's tuned slam_launch.py
+# (which actually contains BOTH SLAM and Nav2 nodes for Go2 in sim mode).
+#
+# Prerequisites:
+#   ./01_start_demo.sh must have run first (Isaac Sim publishing /scan, /odom, /tf)
+#
+# After this script runs:
+#   - /map topic published (SLAM building it from /scan)
+#   - Nav2 ready to accept goal poses on /goal_pose
+#   - frontier_explorer publishing exploration goals (autonomous mode)
+#
+# Usage:
+#   ./05_start_nav.sh
+
+set -e
+
+REPO_DIR="$HOME/panthera/panthera-om1-demo"
+HOST_DISPLAY="${DISPLAY:-:0}"
+DESKTOP_USER="${DESKTOP_USER:-user}"
+XAUTH_FILE="/home/${DESKTOP_USER}/.Xauthority"
+
+echo "==============================================="
+echo " Panthera demo — start SLAM + Nav2"
+echo "==============================================="
+echo ""
+
+# Sanity: containers from 01_start_demo.sh must be up
+if ! docker ps --format '{{.Names}}' | grep -q '^panthera_om1_demo$'; then
+    echo "ERROR: panthera_om1_demo not running. Run ./01_start_demo.sh first."
+    exit 1
+fi
+
+echo "[1/5] Cross-distro DDS sanity check..."
+echo "      Isaac Sim is on Jazzy. OM1 SDK image is on Humble."
+echo "      Both must use Cyclone for wire compatibility."
+docker exec panthera_om1_demo printenv RMW_IMPLEMENTATION
+echo ""
+
+echo "[2/5] Verifying sensor topics from sim are visible..."
+docker exec cmd_vel_publisher bash -c '
+source /opt/ros/jazzy/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=42
+echo "    Topics required by SLAM/Nav2:"
+for topic in /scan /odom /tf /tf_static; do
+    if timeout 3 ros2 topic info "$topic" >/dev/null 2>&1; then
+        echo "      ✓ $topic"
+    else
+        echo "      ✗ $topic MISSING"
+    fi
+done
+'
+
+echo ""
+echo "[3/5] Stop any existing nav container..."
+docker rm -f panthera_nav 2>/dev/null > /dev/null || true
+
+echo ""
+echo "[4/5] Starting panthera_nav container (OM1 SDK image)..."
+docker run -d --name panthera_nav \
+  --network host \
+  --ipc host \
+  -e ROS_DISTRO=humble \
+  -e RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  -e ROS_DOMAIN_ID=42 \
+  -e DISPLAY="$HOST_DISPLAY" \
+  -e XAUTHORITY=/tmp/.docker.xauth \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -v "$XAUTH_FILE":/tmp/.docker.xauth:ro \
+  -v "$REPO_DIR/maps:/app/om1_ros2_sdk/maps:rw" \
+  --entrypoint bash \
+  openmindagi/om1_ros2_sdk:v1.0.1 \
+  -c "tail -f /dev/null" > /dev/null
+sleep 2
+echo "      Nav container up."
+
+echo ""
+echo "[5/5] Launching slam_launch.py with use_sim:=true (SLAM + Nav2 + frontier explorer)..."
+mkdir -p "$REPO_DIR/maps"
+docker exec -d panthera_nav bash -c '
+source /opt/ros/humble/setup.bash
+source /app/om1_ros2_sdk/install/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=42
+ros2 launch go2_sdk slam_launch.py use_sim:=true > /tmp/nav.log 2>&1
+'
+
+echo "      Waiting 15 sec for nav stack to initialize..."
+sleep 15
+
+echo ""
+echo "      Last 10 lines of nav launch log:"
+docker exec panthera_nav tail -10 /tmp/nav.log
+
+echo ""
+echo "==============================================="
+echo " Nav stack started."
+echo "==============================================="
+echo ""
+echo " Verify:"
+echo "   docker exec cmd_vel_publisher bash -c 'source /opt/ros/jazzy/setup.bash && \\"
+echo "     export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_DOMAIN_ID=42 && \\"
+echo "     ros2 topic list | grep -E \"/map|/cmd_vel_nav|/goal_pose\"'"
+echo ""
+echo " Then launch RViz to watch the map build:"
+echo "   ./04_view_sensors.sh"
+echo ""
+echo " To send a goal pose, use ./06_send_goal.sh (next script)."
+echo " To use frontier_explorer (autonomous mapping), Go2 will start exploring"
+echo " automatically once a few seconds of /scan data have been processed."
+echo ""
