@@ -57,13 +57,13 @@ docker run -d --name panthera_om1_demo --runtime=nvidia --gpus all \
   -e XAUTHORITY=/tmp/.docker.xauth \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   -v "$XAUTH_FILE":/tmp/.docker.xauth:ro \
-  -v "$HOME/panthera/om1_demo/cache/kit":/isaac-sim/kit/cache:rw \
-  -v "$HOME/panthera/om1_demo/cache/ov":/isaac-sim/.cache/ov:rw \
-  -v "$HOME/panthera/om1_demo/cache/pip":/isaac-sim/.cache/pip:rw \
-  -v "$HOME/panthera/om1_demo/cache/gl":/isaac-sim/.cache/nvidia/GLCache:rw \
-  -v "$HOME/panthera/om1_demo/cache/compute":/isaac-sim/.nv/ComputeCache:rw \
-  -v "$HOME/panthera/om1_demo/cache/warp":/isaac-sim/.cache/warp:rw \
-  -v "$HOME/panthera/om1_demo/isaac_sim":/workspace/om1_isaac:rw \
+  -v "$HOME/panthera/panthera-om1-demo/cache/kit":/isaac-sim/kit/cache:rw \
+  -v "$HOME/panthera/panthera-om1-demo/cache/ov":/isaac-sim/.cache/ov:rw \
+  -v "$HOME/panthera/panthera-om1-demo/cache/pip":/isaac-sim/.cache/pip:rw \
+  -v "$HOME/panthera/panthera-om1-demo/cache/gl":/isaac-sim/.cache/nvidia/GLCache:rw \
+  -v "$HOME/panthera/panthera-om1-demo/cache/compute":/isaac-sim/.nv/ComputeCache:rw \
+  -v "$HOME/panthera/panthera-om1-demo/cache/warp":/isaac-sim/.cache/warp:rw \
+  -v "$HOME/panthera/panthera-om1-demo/isaac_sim":/workspace/om1_isaac:rw \
   --entrypoint bash \
   nvcr.io/nvidia/isaac-sim:5.1.0 \
   -c "tail -f /dev/null" > /dev/null
@@ -123,8 +123,8 @@ echo " 2. Isaac Sim window with Go2 should be visible on the desktop."
 echo "    Tip: switch viewport from 'Top' to 'Perspective' (top-right)"
 echo "    Tip: search 'Go2' in Stage panel, click it, press F to frame"
 echo ""
-echo " 3. Make Go2 walk:    ~/panthera/om1_demo/scripts/02_walk.sh forward"
+echo " 3. Make Go2 walk:    ~/panthera/panthera-om1-demo/scripts/02_walk.sh forward"
 echo "    Other commands:    back | turn | circle | stop"
 echo ""
-echo " 4. When done:        ~/panthera/om1_demo/scripts/03_stop_demo.sh"
+echo " 4. When done:        ~/panthera/panthera-om1-demo/scripts/03_stop_demo.sh"
 echo ""
