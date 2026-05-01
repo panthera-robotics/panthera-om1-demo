@@ -96,9 +96,9 @@ echo "    Publisher container up."
 
 echo ""
 echo "[5/6] Launching run.py inside Isaac Sim (this takes ~60 sec)..."
-docker exec -d panthera_om1_demo bash -c '
-cd /workspace/om1_isaac && /isaac-sim/python.sh run.py --robot_type $PANTHERA_ROBOT_TYPE --no_keyboard  > /tmp/demo.log 2>&1
-'
+docker exec -d panthera_om1_demo bash -c "
+cd /workspace/om1_isaac && /isaac-sim/python.sh run.py --robot_type ${PANTHERA_ROBOT_TYPE} --no_keyboard  > /tmp/demo.log 2>&1
+"
 
 echo "    Waiting for sim to enter main loop..."
 for i in {1..18}; do
